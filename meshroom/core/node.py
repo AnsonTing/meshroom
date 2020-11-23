@@ -279,10 +279,15 @@ class NodeChunk(BaseObject):
             self.statusFileLastModTime = -1
             self.status.reset()
         else:
-            with open(statusFile, 'r') as jsonFile:
-                statusData = json.load(jsonFile)
-            self.status.fromDict(statusData)
-            self.statusFileLastModTime = os.path.getmtime(statusFile)
+            try:
+                with open(statusFile, 'r') as jsonFile:
+                    statusData = json.load(jsonFile)
+                self.status.fromDict(statusData)
+                self.statusFileLastModTime = os.path.getmtime(statusFile)
+            except Exception as e:
+                self.statusFileLastModTime = -1
+                self.status.reset()
+
         if oldStatus != self.status.status:
             self.statusChanged.emit()
 
@@ -314,8 +319,11 @@ class NodeChunk(BaseObject):
         data = self.status.toDict()
         statusFilepath = self.statusFile
         folder = os.path.dirname(statusFilepath)
-        if not os.path.exists(folder):
+        try:
             os.makedirs(folder)
+        except Exception as e:
+            pass
+        
         statusFilepathWriting = getWritingFilepath(statusFilepath)
         with open(statusFilepathWriting, 'w') as jsonFile:
             json.dump(data, jsonFile, indent=4)
